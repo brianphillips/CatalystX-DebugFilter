@@ -4,6 +4,7 @@ package CatalystX::DebugFilter;
 use Moose::Role;
 use namespace::autoclean;
 use Clone qw(clone);
+requires 'dump_these';
 our $CONFIG_KEY = __PACKAGE__;
 my %filters = (
 	Request  => \&_filter_request,
