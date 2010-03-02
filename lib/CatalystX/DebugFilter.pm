@@ -167,7 +167,7 @@ is logged to the debug logs (and error screen)
 					return undef if !$type;
 
 					if ( $type->isa('DBIx::Class::ResultSet') ) {    # dump ResultSet objects as SQL
-						reutrn $value->as_query;
+						return $value->as_query;
 					} elsif ( $type->isa('DBIx::Class::Result') ) {    # dump Result objects as simple HASH
 						return { $value->get_columns };
 					} else {                                           # ignore these
