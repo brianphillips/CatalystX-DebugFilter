@@ -1,0 +1,33 @@
+Project=/home/bphillips/git/CatalystX-DebugFilter CD=. {
+ Changes
+ MANIFEST.SKIP
+ Makefile.PL
+ README
+ dist.ini
+ lib=lib {
+  CatalystX=CatalystX {
+   DebugFilter.pm
+  }
+ }
+ t=t {
+  00-load.t
+  live-test.t
+  author=author {
+   pod-coverage.t
+   pod.t
+  }
+  lib=lib {
+   Makefile.PL
+   TestApp.pm
+   TestApp=TestApp {
+    Controller=Controller {
+     Root.pm
+    }
+   }
+   script=script {
+    testapp_server.pl
+    testapp_test.pl
+   }
+  }
+ }
+}
