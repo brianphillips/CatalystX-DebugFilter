@@ -28,22 +28,6 @@ around dump_these => sub {
     }
     return @dump;
 };
-around log_request_headers => sub {
-    my $next = shift;
-    my $c = shift;
-    $c->$next(@_);
-    if ( $c->config->{$CONFIG_KEY}->{enable_request_header_logging} ) {
-        $c->log_headers('Request', @_);
-    }
-};
-around log_response_headers => sub {
-    my $next = shift;
-    my $c = shift;
-    $c->$next(@_);
-    if ( $c->config->{$CONFIG_KEY}->{enable_response_header_logging} ) {
-        $c->log_headers('Response', @_);
-    }
-};
 
 sub _normalize_filters {
     my @filters = grep { defined $_ } ( ref( $_[0] ) eq 'ARRAY' ? @{ $_[0] } : @_ );
@@ -169,11 +153,6 @@ is logged to the debug logs (and error screen)
     __PACKAGE__->config(
         'CatalystX::DebugFilter' => {
 
-            # by default, request/response headers are not logged in the debug logs
-            # they can be enabled in this way
-            enable_request_header_logging  => 1,
-            enable_response_header_logging => 1,
-
             # filter all "Cookie" headers as well as "password" and "SECRET" parameters
             Request => { headers => 'Cookie', params => [ 'password', qr/SECRET/ ] },
 
@@ -204,8 +183,7 @@ is logged to the debug logs (and error screen)
 
 This module provides a Moose role that will filter certain elements of
 a request/response/stash before they are logged to the debug logs (or
-the error screen).  As a convenience, you can also enable debugging of
-request and response headers while using this module.
+the error screen).
 
 =head1 METHODS
 
@@ -214,21 +192,6 @@ request and response headers while using this module.
 This role uses an "around" method modifier on the L<Catalyst/dump_these>
 method and modifies the elements returned according to the configuration
 provided by the user as demonstrated in the L<SYNOPSIS> section.
-
-=head2 log_request_headers
-
-=head2 log_response_headers
-
-This role also provides the capability of logging request or response
-headers to the debug logs.  This functionality is not enabled by default
-but may be enabled through the configuration:
-
-    __PACKAGE__->config(
-        'CatalystX::DebugFilter' => {
-            enable_request_header_logging  => 1,
-            enable_response_header_logging => 1
-        }
-    );
 
 =head1 FILTER CONFIGURATION
 
@@ -265,9 +228,13 @@ these could all be combined into a single C<config> call):
 
 =item * Request Headers
 
+Useful with L<CatalystX::Debug::RequestHeaders>:
+
     __PACKAGE__->config( 'CatalystX::DebugFilter' => { Request => { headers => $filters } } );
 
 =item * Response Headers
+
+Useful with L<CatalystX::Debug::ResponseHeaders>:
 
     __PACKAGE__->config( 'CatalystX::DebugFilter' => { Response => { headers => $filters } } );
 
@@ -304,6 +271,16 @@ Also, the stash is only filtered at the top level.  If you would like to
 filter more extensively, you can use a filter callback to traverse the
 stash, modifying whatever data you like (a copy is made before passing
 the value to the callback).
+
+=head1 SEE ALSO
+
+=over 4
+
+=item * L<CatalystX::Debug::RequestHeaders>
+
+=item * L<CatalystX::Debug::ResponseHeaders>
+
+=back
 
 =head1 AUTHOR
 
