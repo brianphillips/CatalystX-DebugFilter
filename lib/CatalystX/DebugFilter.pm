@@ -4,136 +4,152 @@ package CatalystX::DebugFilter;
 use Moose::Role;
 use namespace::autoclean;
 use Clone qw(clone);
-requires 'dump_these';
+requires('dump_these','log_request_headers','log_response_headers');
 our $CONFIG_KEY = __PACKAGE__;
 my %filters = (
-	Request  => \&_filter_request,
-	Response => \&_filter_response,
-	Stash    => \&_filter_stash,
+    Request  => \&_filter_request,
+    Response => \&_filter_response,
+    Stash    => \&_filter_stash,
 );
 around dump_these => sub {
-	my $next = shift;
-	my $c    = shift;
-	my @dump = $next->( $c, @_ );
-	if ( my $config = $c->config->{$CONFIG_KEY} ) {
-		foreach my $d (@dump) {
-			my ( $type, $obj ) = @$d;
-			my $callback      = $filters{$type}  or next;
-			my $filter_config = $config->{$type} or next;
-			my $copy          = clone($obj);
-			if ( $callback->( $filter_config, $copy ) ) {
-				$d->[1] = $copy;
-			}
-		}
-	}
-	return @dump;
+    my $next = shift;
+    my $c    = shift;
+    my @dump = $next->( $c, @_ );
+    if ( my $config = $c->config->{$CONFIG_KEY} ) {
+        foreach my $d (@dump) {
+            my ( $type, $obj ) = @$d;
+            my $callback      = $filters{$type}  or next;
+            my $filter_config = $config->{$type} or next;
+            my $copy          = clone($obj);
+            if ( $callback->( $filter_config, $copy ) ) {
+                $d->[1] = $copy;
+            }
+        }
+    }
+    return @dump;
+};
+around log_request_headers => sub {
+    my $next = shift;
+    my $c = shift;
+    $c->$next(@_);
+    if ( $c->config->{$CONFIG_KEY}->{enable_request_header_logging} ) {
+        $c->log_headers('Request', @_);
+    }
+};
+around log_response_headers => sub {
+    my $next = shift;
+    my $c = shift;
+    $c->$next(@_);
+    if ( $c->config->{$CONFIG_KEY}->{enable_response_header_logging} ) {
+        $c->log_headers('Response', @_);
+    }
 };
 
 sub _normalize_filters {
-	my @filters = grep { defined $_ } ( ref( $_[0] ) eq 'ARRAY' ? @{ $_[0] } : @_ );
-	my @normalized = map { _make_filter_callback($_) } @filters;
-	return @normalized;
+    my @filters = grep { defined $_ } ( ref( $_[0] ) eq 'ARRAY' ? @{ $_[0] } : @_ );
+    my @normalized = map { _make_filter_callback($_) } @filters;
+    return @normalized;
 }
 
 sub _make_filter_callback {
-	my $filter = shift;
+    my $filter = shift;
 
-	my $filter_str = '[FILTERED]';
-	if ( ref($filter) eq 'Regexp' ) {
-		return sub { return $_[0] =~ $filter ? $filter_str : undef };
-	} elsif ( ref($filter) eq 'CODE' ) {
-		return $filter;
-	} else {
-		return sub { return $_[0] eq $filter ? $filter_str : undef };
-	}
+    my $filter_str = '[FILTERED]';
+    if ( ref($filter) eq 'Regexp' ) {
+        return sub { return $_[0] =~ $filter ? $filter_str : undef };
+    } elsif ( ref($filter) eq 'CODE' ) {
+        return $filter;
+    } else {
+        return sub { return $_[0] eq $filter ? $filter_str : undef };
+    }
 }
 
 sub _filter_request {
-	my ( $config, $req ) = @_;
+    my ( $config, $req ) = @_;
 
-	my $filtered = _filter_request_params( $config->{params}, $req );
-	if ( my $h = _filter_headers( $config, $req->headers ) ) {
-		$req->headers($h);
-		$filtered++;
-	}
-	return $filtered;
+    my $filtered = _filter_request_params( $config->{params}, $req );
+    if ( my $h = _filter_headers( $config, $req->headers ) ) {
+        $req->headers($h);
+        $filtered++;
+    }
+    return $filtered;
 
 }
 
 sub _filter_request_params {
-	my ( $param_filter, $req ) = @_;
-	return if !$param_filter;
-	my $is_filtered = 0;
-	my @types       = ( 'query', 'body', '' );
-	my @filters     = _normalize_filters($param_filter);
-	foreach my $type (@types) {
-		my $method = join '_', grep { $_ } $type, 'parameters';
-		my $params = $req->$method;
-		next if !$params;
-		$is_filtered += _filter_hash_ref( $params, @filters );
-	}
-	return $is_filtered;
+    my ( $param_filter, $req ) = @_;
+    return if !$param_filter;
+    my $is_filtered = 0;
+    my @types       = ( 'query', 'body', '' );
+    my @filters     = _normalize_filters($param_filter);
+    foreach my $type (@types) {
+        my $method = join '_', grep { $_ } $type, 'parameters';
+        my $params = $req->$method;
+        next if !$params;
+        $is_filtered += _filter_hash_ref( $params, @filters );
+    }
+    return $is_filtered;
 }
 
 sub _filter_hash_ref {
-	my $hash        = shift;
-	my @filters     = @_;
-	my $is_filtered = 0;
-	foreach my $k ( keys %$hash ) {
-		foreach my $f (@filters) {
-			my $copy = $k;
-			my $filtered = $f->( $copy => $hash->{$k} );
-			if ( defined $filtered ) {
-				$hash->{$k} = $filtered;
-				$is_filtered++;
-				last;
-			}
-		}
-	}
-	return $is_filtered;
+    my $hash        = shift;
+    my @filters     = @_;
+    my $is_filtered = 0;
+    foreach my $k ( keys %$hash ) {
+        foreach my $f (@filters) {
+            my $copy = $k;
+            my $filtered = $f->( $copy => $hash->{$k} );
+            if ( defined $filtered ) {
+                $hash->{$k} = $filtered;
+                $is_filtered++;
+                last;
+            }
+        }
+    }
+    return $is_filtered;
 }
 
 sub _filter_headers {
-	my ( $config, $headers ) = @_;
-	my @filters          = _normalize_filters( $config->{headers} );
-	my $filtered_headers = HTTP::Headers->new();
-	my $filtered         = 0;
-	foreach my $name ( $headers->header_field_names ) {
-		my @values = $headers->header($name);
+    my ( $config, $headers ) = @_;
+    my @filters          = _normalize_filters( $config->{headers} );
+    my $filtered_headers = HTTP::Headers->new();
+    my $filtered         = 0;
+    foreach my $name ( $headers->header_field_names ) {
+        my @values = $headers->header($name);
 
-		# headers can be multi-valued
-		foreach my $value (@values) {
-			foreach my $f (@filters) {
-				my ( $copy_name, $copy_value ) = ( $name, $value );
-				my $new_value = $f->( $copy_name, $copy_value );
+        # headers can be multi-valued
+        foreach my $value (@values) {
+            foreach my $f (@filters) {
+                my ( $copy_name, $copy_value ) = ( $name, $value );
+                my $new_value = $f->( $copy_name, $copy_value );
 
-				# if a defined value is returned, we use that
-				if ( defined $new_value ) {
-					$value = $new_value;
-					$filtered++;
-					last;    # skip the rest of the filters
-				}
-			}
-			$filtered_headers->push_header( $name, $value );
-		}
-	}
-	return $filtered ? $filtered_headers : undef;
+                # if a defined value is returned, we use that
+                if ( defined $new_value ) {
+                    $value = $new_value;
+                    $filtered++;
+                    last;    # skip the rest of the filters
+                }
+            }
+            $filtered_headers->push_header( $name, $value );
+        }
+    }
+    return $filtered ? $filtered_headers : undef;
 }
 
 sub _filter_response {
-	my ( $config, $res ) = @_;
-	my $filtered = 0;
-	if ( my $h = _filter_headers( $config, $res->headers ) ) {
-		$res->headers($h);
-		$filtered++;
-	}
-	return $filtered;
+    my ( $config, $res ) = @_;
+    my $filtered = 0;
+    if ( my $h = _filter_headers( $config, $res->headers ) ) {
+        $res->headers($h);
+        $filtered++;
+    }
+    return $filtered;
 }
 
 sub _filter_stash {
-	my ( $config, $stash ) = @_;
-	my @filters = _normalize_filters($config);
-	return _filter_hash_ref($stash);
+    my ( $config, $stash ) = @_;
+    my @filters = _normalize_filters($config);
+    return _filter_hash_ref($stash);
 }
 
 1;
@@ -145,45 +161,51 @@ is logged to the debug logs (and error screen)
 
 =head1 SYNOPSIS
 
-	package MyApp;
+    package MyApp;
 
-	use Catalyst;
-	with 'CatalystX::DebugFilter';
+    use Catalyst;
+    with 'CatalystX::DebugFilter';
 
-	__PACKAGE__->config(
-		'CatalystX::DebugFilter' => {
+    __PACKAGE__->config(
+        'CatalystX::DebugFilter' => {
 
-			# filter all "Cookie" headers as well as "password" and "SECRET" parameters
-			Request => { headers => 'Cookie', params => [ 'password', qr/SECRET/ ] },
+            # by default, request/response headers are not logged in the debug logs
+            # they can be enabled in this way
+            enable_request_header_logging  => 1,
+            enable_response_header_logging => 1,
 
-			# filter all Set-Cookie values in the response
-			Response => { headers => 'Set-Cookie' },
+            # filter all "Cookie" headers as well as "password" and "SECRET" parameters
+            Request => { headers => 'Cookie', params => [ 'password', qr/SECRET/ ] },
 
-			Stash => [
-				sub {
-					my ( $key, $value ) = @_;
-					my $type = ref($value);
+            # filter all Set-Cookie values in the response
+            Response => { headers => 'Set-Cookie' },
 
-					# ignore any non-ref values
-					return undef if !$type;
+            Stash => [
+                sub {
+                    my ( $key, $value ) = @_;
+                    my $type = ref($value);
 
-					if ( $type->isa('DBIx::Class::ResultSet') ) {    # dump ResultSet objects as SQL
-						return $value->as_query;
-					} elsif ( $type->isa('DBIx::Class::Result') ) {    # dump Result objects as simple HASH
-						return { $value->get_columns };
-					} else {                                           # ignore these
-						return undef;
-					}
-				},
-			]
-		}
-	);
+                    # ignore any non-ref values
+                    return undef if !$type;
+
+                    if ( $type->isa('DBIx::Class::ResultSet') ) {    # dump ResultSet objects as SQL
+                        return $value->as_query;
+                    } elsif ( $type->isa('DBIx::Class::Result') ) {    # dump Result objects as simple HASH
+                        return { $value->get_columns };
+                    } else {                                           # ignore these
+                        return undef;
+                    }
+                },
+            ]
+        }
+    );
 
 =head1 DESCRIPTION
 
-This module provides a Moose role that will filter certain elements
-of a request/response/stash before they are logged to the debug logs
-(or the error screen).
+This module provides a Moose role that will filter certain elements of
+a request/response/stash before they are logged to the debug logs (or
+the error screen).  As a convenience, you can also enable debugging of
+request and response headers while using this module.
 
 =head1 METHODS
 
@@ -192,6 +214,21 @@ of a request/response/stash before they are logged to the debug logs
 This role uses an "around" method modifier on the L<Catalyst/dump_these>
 method and modifies the elements returned according to the configuration
 provided by the user as demonstrated in the L<SYNOPSIS> section.
+
+=head2 log_request_headers
+
+=head2 log_response_headers
+
+This role also provides the capability of logging request or response
+headers to the debug logs.  This functionality is not enabled by default
+but may be enabled through the configuration:
+
+    __PACKAGE__->config(
+        'CatalystX::DebugFilter' => {
+            enable_request_header_logging  => 1,
+            enable_response_header_logging => 1
+        }
+    );
 
 =head1 FILTER CONFIGURATION
 
@@ -217,25 +254,26 @@ instead of the original value.
 
 =back
 
-This module supports filtering a few different types of data (naturally, these could all be combined into a single C<config> call):
+This module supports filtering a few different types of data (naturally,
+these could all be combined into a single C<config> call):
 
 =over 4
 
 =item * Request Parameters
 
-	__PACKAGE__->config( 'CatalystX::DebugFilter' => { Request => { params => $filters } }
+    __PACKAGE__->config( 'CatalystX::DebugFilter' => { Request => { params => $filters } } );
 
 =item * Request Headers
 
-	__PACKAGE__->config( 'CatalystX::DebugFilter' => { Request => { headers => $filters } }
+    __PACKAGE__->config( 'CatalystX::DebugFilter' => { Request => { headers => $filters } } );
 
 =item * Response Headers
 
-	__PACKAGE__->config( 'CatalystX::DebugFilter' => { Response => { headers => $filters } }
+    __PACKAGE__->config( 'CatalystX::DebugFilter' => { Response => { headers => $filters } } );
 
 =item * Stash Data
 
-	__PACKAGE__->config( 'CatalystX::DebugFilter' => { Stash => $filters }
+    __PACKAGE__->config( 'CatalystX::DebugFilter' => { Stash => $filters } );
 
 =back
 
@@ -262,13 +300,18 @@ prevent passwords from being logged to the debug logs but if you create
 an object that contains that password and store it in the stash, the
 password value may still appear on the error screen.
 
+Also, the stash is only filtered at the top level.  If you would like to
+filter more extensively, you can use a filter callback to traverse the
+stash, modifying whatever data you like (a copy is made before passing
+the value to the callback).
+
 =head1 AUTHOR
 
 Brian Phillips C<< bphillips at cpan dot org >>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2009 the above author(s).
+Copyright 2010 the above author(s).
 
 This sofware is free software, and is licensed under the same terms as perl itself.
 
