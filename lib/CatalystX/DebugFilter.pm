@@ -138,11 +138,6 @@ sub _filter_stash {
 
 1;
 
-=head1 NAME
-
-CatalystX::DebugFilter - Provides configurable filtering of data that
-is logged to the debug logs (and error screen)
-
 =head1 SYNOPSIS
 
     package MyApp;
@@ -281,15 +276,5 @@ the value to the callback).
 =item * L<CatalystX::Debug::ResponseHeaders>
 
 =back
-
-=head1 AUTHOR
-
-Brian Phillips C<< bphillips at cpan dot org >>
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2010 the above author(s).
-
-This sofware is free software, and is licensed under the same terms as perl itself.
 
 =cut

@@ -1,4 +1,6 @@
 Revision history for CatalystX-DebugFilter
 
+0.01 2010-03-30
+        * Fix some POD oddities and prereq's for unit tests
 0.01 2010-03-29
         * Initial Release
