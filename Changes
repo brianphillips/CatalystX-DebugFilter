@@ -1,6 +1,8 @@
 Revision history for CatalystX-DebugFilter
 
-0.01 2010-03-30
+{{$NEXT}}
+        * Switch to Module::Build to get predictable build_requires/configure_requires capabilities
+0.02 2010-03-30
         * Fix some POD oddities and prereq's for unit tests
 0.01 2010-03-29
         * Initial Release
