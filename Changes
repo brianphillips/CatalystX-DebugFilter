@@ -2,6 +2,8 @@ Revision history for CatalystX-DebugFilter
 
 {{$NEXT}}
 
+0.04      2010-08-30 09:19:04 America/Chicago
+
 0.04      2010-08-30 09:17:00 America/Chicago
         * Switch to Clone::Fast (vs. Clone) to avoid some killing of dbh's on dumping
 0.03      2010-03-30 21:56:29 America/Chicago
