@@ -3,7 +3,7 @@ package CatalystX::DebugFilter;
 # ABSTRACT: Provides configurable filtering of data that is logged to the debug logs (and error screen)
 use Moose::Role;
 use namespace::autoclean;
-use Clone::Fast qw(clone);
+use Clone::PP qw(clone);
 requires('dump_these','log_request_headers','log_response_headers');
 our $CONFIG_KEY = __PACKAGE__;
 my %filters = (
