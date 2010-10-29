@@ -32,6 +32,16 @@ my $error_screen = $mech->get('http://localhost/boom?foo_param=secret')->content
 my $expected_debug = "parameters       =&gt; { foo_param =&gt; &quot;[FILTERED]&quot; }";
 like $error_screen, qr/\Q$expected_debug/, 'filtered on debug screen';
 
+use HTTP::Request::Common;
+my $file_contents = "This is my file!";
+my $request = POST(
+	'http://localhost/upload',
+	'Content_Type' => 'multipart/form-data',
+	'Content'      => [ upload_file => [ undef, 'test_file.txt', Content => $file_contents ] ]
+);
+my $response = $mech->request($request);
+is($response->content, $file_contents, 'uploaded file content matches');
+
 done_testing;
 
 BEGIN {

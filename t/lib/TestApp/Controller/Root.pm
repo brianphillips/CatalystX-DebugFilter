@@ -17,6 +17,12 @@ sub main : Chained('base') PathPart('') Args(0) {
     $ctx->res->body('<h1>It works</h1>');
 }
 
+sub upload : Local {
+	my ( $self, $ctx ) = @_;
+	my $upload = $ctx->req->upload('upload_file');
+	$ctx->res->body($upload->slurp);
+}
+
 sub boom :Local {
 	die "force error";
 }
