@@ -1,7 +1,7 @@
 Revision history for CatalystX-DebugFilter
 
 {{$NEXT}}
-
+        * Rip out all of the Clone nonsense and just use simple (aka dumb/shallow) cloning.  It's always causing trouble...
 0.06      2010-09-07 18:54:27 America/Chicago
         * Switch to Clone::PP (vs. Clone::Fast) as this seems to be causing more problems than Clone was <sigh>
 0.05      2010-08-30 10:06:47 America/Chicago

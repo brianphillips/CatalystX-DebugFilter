@@ -3,7 +3,7 @@ package CatalystX::DebugFilter;
 # ABSTRACT: Provides configurable filtering of data that is logged to the debug logs (and error screen)
 use Moose::Role;
 use namespace::autoclean;
-use Clone::PP qw(clone);
+use Scalar::Util qw(reftype blessed);
 requires('dump_these','log_request_headers','log_response_headers');
 our $CONFIG_KEY = __PACKAGE__;
 my %filters = (
@@ -20,7 +20,22 @@ around dump_these => sub {
             my ( $type, $obj ) = @$d;
             my $callback      = $filters{$type}  or next;
             my $filter_config = $config->{$type} or next;
-            my $copy          = clone($obj);
+            my $obj_type = reftype($obj);
+
+            # poor-man's shallow cloning, none of the Clone
+            # modules were problem-free...
+            my $copy;
+            if ( $obj_type eq 'HASH' ) {
+                $copy = {%$obj};
+            } elsif ( $obj_type eq 'ARRAY' ) {
+                $copy = [@$obj];
+            } else {
+                $copy = "$obj";    # not going to bother with anything else
+            }
+            if(ref $copy and my $obj_ref = blessed $obj){
+                bless $copy, $obj_ref;
+            }
+
             if ( $callback->( $filter_config, $copy ) ) {
                 $d->[1] = $copy;
             }
