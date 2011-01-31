@@ -84,8 +84,12 @@ sub _filter_request_params {
     foreach my $type (@types) {
         my $method = join '_', grep { $_ } $type, 'parameters';
         my $params = $req->$method;
-        next if !$params;
-        $is_filtered += _filter_hash_ref( $params, @filters );
+        next if !%$params;
+        my $copy = { %$params };
+        $is_filtered += _filter_hash_ref( $copy, @filters );
+        if($is_filtered){
+            $req->$method($copy);
+        }
     }
     return $is_filtered;
 }
