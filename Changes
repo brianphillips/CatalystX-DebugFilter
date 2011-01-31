@@ -2,6 +2,8 @@ Revision history for CatalystX-DebugFilter
 
 {{$NEXT}}
 
+0.08      2011-01-31 12:41:19 America/Chicago
+        * the simple (aka dumb/shallow) cloning wasn't quite deep enough (the request params were getting modified in place)
 0.07      2011-01-21 15:42:43 America/Chicago
         * Rip out all of the Clone nonsense and just use simple (aka dumb/shallow) cloning.  It's always causing trouble...
 0.06      2010-09-07 18:54:27 America/Chicago
