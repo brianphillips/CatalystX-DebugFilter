@@ -2,6 +2,8 @@ Revision history for CatalystX-DebugFilter
 
 {{$NEXT}}
 
+0.09      2011-02-24 11:43:25 America/Chicago
+        * add support for filtering the session since that gets dumped when using Catalyst::Plugin::Session
 0.08      2011-01-31 12:41:19 America/Chicago
         * the simple (aka dumb/shallow) cloning wasn't quite deep enough (the request params were getting modified in place)
 0.07      2011-01-21 15:42:43 America/Chicago
