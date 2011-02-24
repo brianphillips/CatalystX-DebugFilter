@@ -10,6 +10,7 @@ my %filters = (
     Request  => \&_filter_request,
     Response => \&_filter_response,
     Stash    => \&_filter_stash,
+    Session  => \&_filter_session,
 );
 around dump_these => sub {
     my $next = shift;
@@ -155,6 +156,12 @@ sub _filter_stash {
     return _filter_hash_ref($stash);
 }
 
+sub _filter_session {
+    my ( $config, $stash ) = @_;
+    my @filters = _normalize_filters($config);
+    return _filter_hash_ref($stash);
+}
+
 1;
 
 =head1 SYNOPSIS
@@ -189,14 +196,17 @@ sub _filter_stash {
                         return undef;
                     }
                 },
-            ]
+            ],
+            Session => [
+                'secret_session_key'
+            ],
         }
     );
 
 =head1 DESCRIPTION
 
 This module provides a Moose role that will filter certain elements of
-a request/response/stash before they are logged to the debug logs (or
+a request/response/stash/session before they are logged to the debug logs (or
 the error screen).
 
 =head1 METHODS
@@ -281,10 +291,10 @@ prevent passwords from being logged to the debug logs but if you create
 an object that contains that password and store it in the stash, the
 password value may still appear on the error screen.
 
-Also, the stash is only filtered at the top level.  If you would like to
-filter more extensively, you can use a filter callback to traverse the
-stash, modifying whatever data you like (a copy is made before passing
-the value to the callback).
+Also, the stash and session are only filtered at the top level.  If you
+would like to filter more extensively, you can use a filter callback to
+traverse the hash, modifying whatever data you like (a shallow copy is
+made before passing the value to the callback).
 
 =head1 SEE ALSO
 
