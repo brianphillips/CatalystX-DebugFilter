@@ -2,6 +2,8 @@ Revision history for CatalystX-DebugFilter
 
 {{$NEXT}}
 
+0.10      2012-10-12 08:07:06 America/Chicago
+        * tolerate non-hashref params (per https://rt.cpan.org/Public/Bug/Display.html?id=80149)
 0.09      2011-02-24 11:43:25 America/Chicago
         * add support for filtering the session since that gets dumped when using Catalyst::Plugin::Session
 0.08      2011-01-31 12:41:19 America/Chicago
