@@ -2,6 +2,8 @@ Revision history for CatalystX-DebugFilter
 
 {{$NEXT}}
 
+0.11      2012-11-14 21:33:27 America/Chicago
+        * fix failing test (due to case sensitive header names)
 0.10      2012-10-12 08:07:06 America/Chicago
         * tolerate non-hashref params (per https://rt.cpan.org/Public/Bug/Display.html?id=80149)
 0.09      2011-02-24 11:43:25 America/Chicago
