@@ -19,7 +19,7 @@ use Test::WWW::Mechanize::Catalyst 'TestApp';
 my $mech = Test::WWW::Mechanize::Catalyst->new;
 $mech->get_ok('http://localhost/?foo_param=secret', ['X-Secret' => 'Secret value'], 'get main page');
 my $log = $logger->GET;
-like $log, qr{X-Secret.*FILTERED}, 'X-Secret header is filtered';
+like $log, qr{X-Secret.*FILTERED}i, 'X-Secret header is filtered';
 like $log, qr{foo_param.*FILTERED}, 'foo_param is filtered';
 like $log, qr{foo_param.*FILTERED}, 'foo_param is filtered';
 like $log, qr{X-Res-Secret-2.*FILTERED}, 'X-Res-Secret-2 is filtered';
