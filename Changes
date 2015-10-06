@@ -2,6 +2,8 @@ Revision history for CatalystX-DebugFilter
 
 {{$NEXT}}
 
+0.13      2015-10-06 10:53:21-05:00 America/Chicago
+
 0.12      2015-09-09 14:50:24-05:00 America/Chicago
         * Make test for debug output more tolerant of white-space (espizo)
 0.11      2012-11-14 21:33:27 America/Chicago
