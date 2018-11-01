@@ -2,6 +2,9 @@ Revision history for CatalystX-DebugFilter
 
 {{$NEXT}}
 
+0.15      2018-11-01 13:20:51+00:00 Europe/London
+        * Stable release of previous version
+
 0.14      2018-11-01 13:07:00+00:00 Europe/London (TRIAL RELEASE)
         * Fix test failures on Perl 5.26 related to deprecated regex syntax (Julien Fiegehenn)
 
